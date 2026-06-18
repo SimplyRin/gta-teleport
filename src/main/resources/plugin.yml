@@ -1,0 +1,10 @@
+main: net.simplyrin.gtateleport.GtaTeleport
+name: GtaTeleport
+version: 1.0.0
+author: SimplyRin
+api-version: '1.21'
+commands:
+  gtateleport:
+    description: Teleports you to a GTA location.
+    usage: /gtateleport x y z or @player
+    aliases: [gtatp]
