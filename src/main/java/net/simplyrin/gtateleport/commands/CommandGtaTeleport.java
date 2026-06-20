@@ -22,10 +22,7 @@ public class CommandGtaTeleport implements CommandExecutor {
             return true;
         }
 
-        if (sender instanceof Player player) {
-            player.setAllowFlight(true);
-            player.setFlying(true);
-        } else {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("§cThis command can only be used by players.");
             return true;
         }
