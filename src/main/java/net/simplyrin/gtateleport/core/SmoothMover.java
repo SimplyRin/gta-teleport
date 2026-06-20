@@ -22,32 +22,44 @@ public class SmoothMover {
     // ===== 飛行ON・移動禁止にしてから一連の流れを開始 =====
     public void startWarp(JavaPlugin plugin, Player player, Location from, Location to) {
         final boolean originalAllowFlight = player.getAllowFlight();
-        final boolean originalFlying = player.isFlying();
         final float originalWalkSpeed = player.getWalkSpeed();
         final float originalFlySpeed = player.getFlySpeed();
         final float originalYaw = player.getLocation().getYaw();
 		final float originalPitch = player.getLocation().getPitch();
+        final int originalViewDistance = player.getViewDistance();
 
         player.setAllowFlight(true);
         player.setFlying(true);
         player.setWalkSpeed(0f);
         player.setFlySpeed(0f);
 
+        int dx = to.getBlockX() - from.getBlockX();
+        int dz = to.getBlockZ() - from.getBlockZ();
+        double blocks = Math.hypot(dx, dz);
+
         ascendThenMoveSmoothly(plugin, player, from, to, () -> {
+            if (blocks > 500) {
+                player.sendMessage("§cTeleport distance is too long. View distance has been reduced.");
+                player.setViewDistance(2);
+            }
+        },() -> {
             player.setWalkSpeed(originalWalkSpeed);
             player.setFlySpeed(originalFlySpeed);
-            player.setFlying(originalFlying);
             player.setAllowFlight(originalAllowFlight);
+            player.setFlying(false);
 
             Location location = player.getLocation();
             player.teleport(new Location(location.getWorld(), location.getX(), location.getY(), location.getZ(), originalYaw, originalPitch));
+        }, () -> {
+            player.setViewDistance(originalViewDistance);
         });
     }
 
-    public void ascendThenMoveSmoothly(JavaPlugin plugin, Entity entity, Location from, Location to, Runnable onComplete) {
+    public void ascendThenMoveSmoothly(JavaPlugin plugin, Entity entity, Location from, Location to, Runnable onMoveStart, Runnable onComplete, 
+            Runnable semiComplete) {
         final World world = from.getWorld();
         final int stepTicks = 12; // 0.6秒
-        final double stepHeight = 30.0;
+        final double stepHeight = (256 - from.getY()) / 3.0;
 
         float startYaw = entity.getLocation().getYaw();
         entity.teleport(new Location(world, from.getX(), from.getY(), from.getZ(), startYaw, LOOK_DOWN_PITCH));
@@ -74,7 +86,11 @@ public class SmoothMover {
 
                 if (stage >= 3) {
                     cancel();
-                    moveSmoothly(plugin, entity, next, to, () -> descendUntilGround(plugin, entity, onComplete));
+
+                    if (onMoveStart != null) {
+                        onMoveStart.run();
+                    }
+                    moveSmoothly(plugin, entity, next, to, () -> descendUntilGround(plugin, entity, onComplete, semiComplete));
                 }
             }
         }.runTaskTimer(plugin, stepTicks, stepTicks);
@@ -128,10 +144,18 @@ public class SmoothMover {
         }
     }
 
-    private void descendUntilGround(JavaPlugin plugin, Entity entity, Runnable onComplete) {
+    private void descendUntilGround(JavaPlugin plugin, Entity entity, Runnable onComplete, Runnable semiComplete) {
         final World world = entity.getWorld();
         final int stepTicks = 12;
-        final double stepDown = 30.0;
+        
+        int groundY = world.getHighestBlockYAt(
+                (int) Math.floor(entity.getX()),
+                (int) Math.floor(entity.getZ())) + 1;
+        final double stepDown = (entity.getY() - groundY) / 3.0;
+
+        if (semiComplete != null) {
+            semiComplete.run();
+        }
 
         new BukkitRunnable() {
             @Override
@@ -142,9 +166,7 @@ public class SmoothMover {
                 }
 
                 Location current = entity.getLocation();
-                int groundY = world.getHighestBlockYAt(
-                        (int) Math.floor(current.getX()),
-                        (int) Math.floor(current.getZ())) + 1;
+                
                 double nextY = current.getY() - stepDown;
                 float yaw = current.getYaw();
 
