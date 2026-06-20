@@ -2,11 +2,13 @@ package net.simplyrin.gtateleport;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
+import lombok.Getter;
 import net.simplyrin.gtateleport.commands.CommandGtaTeleport;
 import net.simplyrin.gtateleport.core.SmoothMover;
 
 public class GtaTeleport extends JavaPlugin {
 
+    @Getter
     private SmoothMover smoothMover;
 
     @Override
@@ -15,10 +17,6 @@ public class GtaTeleport extends JavaPlugin {
         this.getCommand("gtatp").setExecutor(new CommandGtaTeleport(this));
 
         this.smoothMover = new SmoothMover();
-    }
-
-    public SmoothMover getSmoothMover() {
-        return this.smoothMover;
     }
 
 }

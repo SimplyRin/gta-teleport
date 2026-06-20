@@ -6,15 +6,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import lombok.RequiredArgsConstructor;
 import net.simplyrin.gtateleport.GtaTeleport;
 
+@RequiredArgsConstructor
 public class CommandGtaTeleport implements CommandExecutor {
 
   private final GtaTeleport instance;
-
-  public CommandGtaTeleport(GtaTeleport instance) {
-    this.instance = instance;
-  }
 
   @Override
   public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label,
